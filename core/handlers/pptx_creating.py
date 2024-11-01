@@ -67,7 +67,8 @@ async def create_presentation(directory: str):
                 await add_video_to_slide(slide, file, first_frame_pic)
 
         # Сохранение презентации
-        prs.save(f'{directory}/{team_name}.pptx')
+        filepath = Path(directory, team_name).with_suffix('pptx').absolute().as_posix()
+        prs.save(filepath)
     return teams_files.keys()
 
 

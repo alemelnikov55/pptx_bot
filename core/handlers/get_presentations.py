@@ -8,7 +8,7 @@ from handlers.ya_func_utils import upload_pptx_to_ya_disk
 
 async def presentation_create_handler(message: Message):
     """
-    Обработка команды /presentation
+    Обработка команды /get_pptx
 
     Создает и загружает презентации на Яндекс.Диск для каждой из команд
     """

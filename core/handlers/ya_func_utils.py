@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PosixPath
 import datetime
 import yadisk
 import yadisk.settings
@@ -7,16 +7,6 @@ from utils.logger import logger
 from loader import project_folder, path_to_local_mediafiles, ya_disk_token
 
 Path(path_to_local_mediafiles).mkdir(parents=True, exist_ok=True)
-# client = yadisk.AsyncClient(token=ya_disk_token, )
-
-# yadisk.settings.DEFAULT_UPLOAD_RETRY_INTERVAL = 5
-# yadisk.settings.DEFAULT_RETRY_INTERVAL = 5
-#
-# print(yadisk.settings.DEFAULT_UPLOAD_TIMEOUT,
-#       yadisk.settings.DEFAULT_TIMEOUT,
-#       yadisk.settings.DEFAULT_UPLOAD_RETRY_INTERVAL,
-#       yadisk.settings.DEFAULT_N_RETRIES,
-#       yadisk.settings.DEFAULT_RETRY_INTERVAL)
 
 
 async def create_team_folder(team_name: str):
@@ -28,48 +18,20 @@ async def create_team_folder(team_name: str):
     """
     folder_name = team_name.replace(' ', '_').replace('/', '')
     date = datetime.date.strftime(datetime.date.today(), "%d%m%y")
+    destination_folder_on_yadisk = Path(project_folder, date, folder_name)
+
     async with yadisk.AsyncClient(token=ya_disk_token, session="aiohttp") as client:
-        if not await client.exists(f"{project_folder}/{date}/{folder_name}/"):
+        if not await client.exists(destination_folder_on_yadisk.as_posix()):
             logger.info('NonExisting path')
+
             try:
-                await client.mkdir(f"{project_folder}/{date}")
+                await client.mkdir(destination_folder_on_yadisk.parent.as_posix())
             except yadisk.exceptions.DirectoryExistsError:
                 logger.warning('Directory already exists')
             await client.mkdir(f"{project_folder}/{date}/{folder_name}")
 
 
-# async def upload_to_disk(list_of_files: list, chat_name: str):
-#     """
-#     Загрузка медиафалов на ЯДиск
-#
-#     :param list_of_files: list[str] список имен файлов
-#     :param chat_name: str имя чата или команды
-#     :return: None
-#     Сохораняет полученные от команды медиафайлы в папку команды
-#     """
-#     date = datetime.date.strftime(datetime.date.today(), "%d%m%y")
-#     folder_name = chat_name.replace(' ', '_').replace('/', '')
-#     destination_path = f'{project_folder}/{date}/{folder_name}'
-#
-#     async with yadisk.AsyncClient(token=ya_disk_token, session="aiohttp") as client:
-#         if not await client.exists(destination_path):
-#             await create_team_folder(folder_name)
-#             print(f"New folder created {destination_path}")
-#
-#     for file in list_of_files:
-#         print(file)
-#         id_for_delete = list_of_files.index(file)
-#         list_of_files.pop(id_for_delete)
-#         try:
-#             try:
-#                 await fast_video_upload(file, destination_path)
-#             except yadisk.exceptions.ParentNotFoundError as error:
-#                 print(error)
-#
-#         except yadisk.exceptions.PathExistsError as error:
-#             print(error)
-#
-async def upload_to_disk(file: str, chat_name: str):
+async def upload_to_disk(file: PosixPath, chat_name: str):
     """
     Загрузка медиафалов на ЯДиск
 
@@ -81,10 +43,10 @@ async def upload_to_disk(file: str, chat_name: str):
     """
     date = datetime.date.strftime(datetime.date.today(), "%d%m%y")
     folder_name = chat_name.replace(' ', '_').replace('/', '')
-    destination_path = f'{project_folder}/{date}/{folder_name}'
+    destination_path = Path('', project_folder, date, folder_name)
 
     async with yadisk.AsyncClient(token=ya_disk_token, session="aiohttp") as client:
-        if not await client.exists(destination_path):
+        if not await client.exists(destination_path.as_posix()):
             await create_team_folder(folder_name)
             logger.warning(f"New folder created {destination_path}")
         try:
@@ -93,7 +55,7 @@ async def upload_to_disk(file: str, chat_name: str):
             logger.error(error)
 
 
-async def fast_file_upload(source_path: str, full_destination_path: str):
+async def fast_file_upload(source_path: Path, full_destination_path: Path):
     """
     Функция для загрузки файлов
 
@@ -106,21 +68,26 @@ async def fast_file_upload(source_path: str, full_destination_path: str):
     Для остальный типов файлов - стандартное копирование на ЯДиск
     ОГРАНИЧЕНИЕЯ: в названии файла не должно быть точек '.'
     """
-    file_type = source_path.split('/')[-1].split('.')[-1]
-    async with yadisk.AsyncClient(token=ya_disk_token, session="aiohttp") as client:
-        if file_type.lower() in ('mp4', 'mov'):
-            modify_file_name = source_path.split('/')[-1].split('.')[0]  # обрезка расширения
-            full_destination_path = full_destination_path + '/' + modify_file_name
+    file_extension = source_path.suffix
 
-            await client.upload(source_path, full_destination_path)# загрузка видео файла без ограничений по скорости
+    async with yadisk.AsyncClient(token=ya_disk_token, session="aiohttp") as client:
+        if file_extension.lower() in ('mp4', 'mov'):
+            modify_file_name = source_path.stem  # обрезка расширения
+            full_destination_path = Path(full_destination_path, modify_file_name)
+
+            await client.upload(source_path.as_posix(), full_destination_path)# загрузка видео файла без ограничений по скорости
 
             # переименование файла в конечной папке
-            correct_file_name = modify_file_name + '.' + file_type  # правильное имя файла с расширением
-            await client.rename(full_destination_path, correct_file_name)  # изменение расширения на ЯДиске
+            # correct_file_name = modify_file_name + '.' + file_extension  # правильное имя файла с расширением
+            print(full_destination_path, 'full_dest_path ____________________________')
+            await client.rename(full_destination_path, full_destination_path.with_suffix(file_extension))  # изменение расширения на ЯДиске
             return
         # Загрузка остальных типов файлов
-        file_name = source_path.split('/')[-1]
-        await client.upload(source_path, f"{full_destination_path}/{file_name}")
+        file_name = source_path.name
+        try:
+            await client.upload(source_path.as_posix(), PosixPath(full_destination_path, file_name).as_posix())
+        except yadisk.exceptions.RequestTimeoutError as e:
+            logger.error(f'{file_name} file handeling error: {e}')
 
 
 async def upload_pptx_to_ya_disk(list_of_files: list):
@@ -133,13 +100,18 @@ async def upload_pptx_to_ya_disk(list_of_files: list):
     date = datetime.date.strftime(datetime.date.today(), "%d%m%y")
     async with yadisk.AsyncClient(token=ya_disk_token, session="aiohttp") as client:
         for file in list_of_files:
-            try:
-                await client.upload(f"{path_to_local_mediafiles}/{file}",
-                                    f"{project_folder}/{date}/{file}")
-            except yadisk.exceptions.ParentNotFoundError:
-                await create_team_folder('')
-                await client.upload(f"{path_to_local_mediafiles}/{file}",
-                                    f"{project_folder}/{date}/{file}")
-                logger.warning(f"New folder created {project_folder}/{date}/{file}")
 
-            # logger.info(f"uploading takes {datetime.datetime.now() - start_time} seconds")
+            full_destination_path = Path(project_folder, date, file).as_posix()
+            source_path = Path(path_to_local_mediafiles, file).absolute().as_posix()
+
+            try:
+                await client.upload(source_path, full_destination_path)
+            except yadisk.exceptions.ParentNotFoundError:
+
+                try:
+                    await create_team_folder('')
+                except yadisk.exceptions.DirectoryExistsError as e:
+                    logger.error(e)
+
+                await client.upload(source_path, full_destination_path)
+                logger.warning(f"New folder created {full_destination_path}")
