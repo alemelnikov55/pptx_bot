@@ -1,9 +1,9 @@
 from aiogram.types import Message
 
 from handlers.pptx_creating import create_presentation
+from handlers.ya_func_utils import upload_pptx_to_ya_disk
 from loader import path_to_local_mediafiles
 from utils.logger import logger
-from handlers.ya_func_utils import upload_pptx_to_ya_disk
 
 
 async def presentation_create_handler(message: Message):

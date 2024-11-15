@@ -28,7 +28,7 @@ async def create_team_folder(team_name: str):
                 await client.mkdir(destination_folder_on_yadisk.parent.as_posix())
             except yadisk.exceptions.DirectoryExistsError:
                 logger.warning('Directory already exists')
-            await client.mkdir(f"{project_folder}/{date}/{folder_name}")
+            await client.mkdir(destination_folder_on_yadisk.as_posix())
 
 
 async def upload_to_disk(file: PosixPath, chat_name: str):
@@ -78,8 +78,6 @@ async def fast_file_upload(source_path: Path, full_destination_path: Path):
             await client.upload(source_path.as_posix(), full_destination_path)# загрузка видео файла без ограничений по скорости
 
             # переименование файла в конечной папке
-            # correct_file_name = modify_file_name + '.' + file_extension  # правильное имя файла с расширением
-            print(full_destination_path, 'full_dest_path ____________________________')
             await client.rename(full_destination_path, full_destination_path.with_suffix(file_extension))  # изменение расширения на ЯДиске
             return
         # Загрузка остальных типов файлов
