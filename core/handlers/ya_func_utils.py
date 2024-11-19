@@ -57,7 +57,7 @@ async def upload_to_disk(file: PosixPath, chat_name: str):
 
 async def fast_file_upload(source_path: Path, full_destination_path: Path):
     """
-    Функция для загрузки файлов
+    Функция для загрузки видеофайлов
 
     :param source_path: str путь к исходному видеофайлу
     :param full_destination_path: str полный путь к конечной папке на ЯДиске

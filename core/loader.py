@@ -12,5 +12,6 @@ path_to_local_mediafiles = Path('.', 'mediafiles').absolute()
 
 TOKEN = os.getenv('TOKEN')
 admin_id = os.getenv('admin_id')
+ADMIN_LIST = [int(x) for x in os.getenv('ADMIN_LIST').split(' ')]
 ya_disk_token = os.getenv('ya_disk_token')
 project_folder = os.getenv('project_folder')

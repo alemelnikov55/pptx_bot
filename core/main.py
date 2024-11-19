@@ -10,6 +10,7 @@ from utils.support_commands import starting, stopping
 from handlers.upload_file import upload_file_handler
 from handlers.get_presentations import presentation_create_handler
 from handlers.clear_local_storage_handler import clear_local_handlers, confirm_clear_server_kb_handler
+from handlers.start_handler import start_handler
 
 # rsync -Praz /home/alex/PycharmProjects/vmeste_pro_bot/core alemel@194.87.187.251:/home/alemel/scout_bot/
 
@@ -29,6 +30,7 @@ async def start_bot() -> None:
 
     dp.message.register(presentation_create_handler, Command(commands='get_pptx'))
     dp.message.register(clear_local_handlers, Command(commands='clear_files'))
+    dp.message.register(start_handler, Command(commands='start'))
 
     # dp.message.register(upload_file_handler, F.photo)
     dp.message.register(upload_file_handler, F.video | F.photo)

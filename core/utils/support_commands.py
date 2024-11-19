@@ -8,7 +8,7 @@ from loader import admin_id
 async def set_commands(bot: Bot):
     """Функция для установки команд бота"""
     await bot.set_my_commands([
-        BotCommand(command='get_pptx', description='Скачать презентацию',
+        BotCommand(command='get_pptx', description='Сформировать и загрузить презентации на ЯДиск',
                    scope=BotCommandScopeChat(chat_id=admin_id)),
         BotCommand(command='clear_files', description='Очистить локальные файлы',
                    scope=BotCommandScopeChat(chat_id=admin_id))
